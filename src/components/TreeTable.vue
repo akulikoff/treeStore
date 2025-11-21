@@ -18,14 +18,14 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue';
 import { AgGridVue } from 'ag-grid-vue3';
-import type { ColDef, GridReadyEvent, GridApi, ICellRendererParams, RowGroupOpenedEvent, ModelUpdatedEvent, ValueGetterParams, Theme } from 'ag-grid-community'; // Заменяем RowDataChangedEvent на DataChangedEvent
-import type { TreeTableProps, TreeRowData } from '../types/tree.type';
-
-// Импорт и регистрация модулей AG Grid
 import { ModuleRegistry, AllCommunityModule, themeQuartz, colorSchemeLight, iconSetQuartz   } from 'ag-grid-community';
 import { RowGroupingModule, TreeDataModule, RowNumbersModule } from 'ag-grid-enterprise';
+import type { ColDef, GridReadyEvent, GridApi, ICellRendererParams,  ValueGetterParams, Theme } from 'ag-grid-community'; // Заменяем RowDataChangedEvent на DataChangedEvent
+import type { TreeTableProps, TreeRowData } from '../types/tree.type';
 
-// Регистрация модулей, включая RowNumbersModule
+
+import { useTreeTableData } from '../composables/useTreeTableData';
+// Регистрация модулей Ag Grid
 ModuleRegistry.registerModules([
   AllCommunityModule,
   RowGroupingModule,
@@ -33,20 +33,17 @@ ModuleRegistry.registerModules([
   RowNumbersModule
 ]);
 
+const props = defineProps<TreeTableProps>();
+const { rowData, getDataPath } = useTreeTableData(props);
+
 const myTheme = themeQuartz
     .withPart(iconSetQuartz)
     .withPart(colorSchemeLight);
 // Пропсы компонента
-const props = defineProps<TreeTableProps>();
 
 // Ссылка на API таблицы
 const gridApi = ref<GridApi | null>(null);
 
-const getDataPath = (data: TreeRowData): string[] => {
-  const parents = props.treeStore.getAllParents(data.id);
-  const path = parents.reverse().map(parent => parent['name'] || parent.id.toString());
-  return path;
-};
 
 const getColumnDefs = (): ColDef<TreeRowData>[] => {
   const baseColumns: ColDef<TreeRowData>[] = [
@@ -131,20 +128,22 @@ const autoGroupColumnDef = computed<ColDef<TreeRowData>>(() => ({
     }
   },
   cellStyle: (params) => {
-    if (params.data && !params.data.hasChildren) {
-      return {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        color: 'gray',          // Темно-серый текст
-        fontStyle: 'normal',       // Курсивный текст
-      };
-    }
-    // Возвращаем стандартные стили для узлов
-    return {
+    const baseStyle = {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'flex-start',
+    };
+    
+    if (params.data && !params.data.hasChildren) {
+      return {
+        ...baseStyle,
+        color: 'gray',
+        fontStyle: 'normal',
+      };
+    }
+    
+    return {
+      ...baseStyle,
       fontWeight: '500',
     };
   },
@@ -152,37 +151,17 @@ const autoGroupColumnDef = computed<ColDef<TreeRowData>>(() => ({
   filter: false
 }));
 
-const rowData = computed<TreeRowData[]>(() => {
-  const allItems = props.treeStore.getAll();
-  return allItems.map((item) => {
-    const children = props.treeStore.getChildren(item.id);
-    const level = calculateLevel(item.id);
-    return {
-      ...item,
-      category: children.length > 0 ? "Группа" as const : "Элемент" as const,
-      level: level,
-      hasChildren: children.length > 0,
-      expanded: false
-    } as TreeRowData;
-  });
-});
-
-function calculateLevel(itemId: string | number): number {
-  const parents = props.treeStore.getAllParents(itemId);
-  return parents.length - 1;
-}
-
 const refreshRowNumbers = () => {
   if (gridApi.value) {
     gridApi.value.refreshCells({ columns: ['rowNumber'], force: true });
   }
 };
 
-function onRowGroupOpened(_params: RowGroupOpenedEvent<TreeRowData>) {
+function onRowGroupOpened() {
   refreshRowNumbers();
 }
 
-function onModelUpdated(_params: ModelUpdatedEvent<TreeRowData>) {
+function onModelUpdated() {
   refreshRowNumbers();
 }
 

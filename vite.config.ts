@@ -15,4 +15,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'ag-grid': ['ag-grid-community', 'ag-grid-vue3', 'ag-grid-enterprise'],
+        },
+      },
+    },
+  },
 })
