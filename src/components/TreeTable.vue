@@ -18,13 +18,12 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue';
 import { AgGridVue } from 'ag-grid-vue3';
-import { ModuleRegistry, AllCommunityModule, themeQuartz, colorSchemeLight, iconSetQuartz   } from 'ag-grid-community';
+import { ModuleRegistry, AllCommunityModule, themeQuartz, colorSchemeLight, iconSetQuartz } from 'ag-grid-community';
 import { RowGroupingModule, TreeDataModule, RowNumbersModule } from 'ag-grid-enterprise';
-import type { ColDef, GridReadyEvent, GridApi, ICellRendererParams,  ValueGetterParams, Theme } from 'ag-grid-community';
+import type { ColDef, GridReadyEvent, GridApi, Theme } from 'ag-grid-community';
 import type { TreeTableProps, TreeRowData } from '../types/tree.type';
-
-
 import { useTreeTableData } from '../composables/useTreeTableData';
+import { useTreeTableColumns } from '../composables/useTreeTableColumns';
 
 // Регистрация модулей AG Grid
 ModuleRegistry.registerModules([
@@ -36,130 +35,19 @@ ModuleRegistry.registerModules([
 
 const props = defineProps<TreeTableProps>();
 const { rowData, getDataPath } = useTreeTableData(props);
+const { columnDefs, autoGroupColumnDef } = useTreeTableColumns(props);
 
 // Настройка темы AG Grid
 const myTheme = themeQuartz
-    .withPart(iconSetQuartz)
-    .withPart(colorSchemeLight)
-    .withParams({
-        headerColumnBorder: 'none',
-        columnBorder: 'none',
-    });
+  .withPart(iconSetQuartz)
+  .withPart(colorSchemeLight)
+  .withParams({
+    headerColumnBorder: 'none',
+    columnBorder: 'none',
+  });
 
 // Ссылка на API таблицы
 const gridApi = ref<GridApi | null>(null);
-
-
-const getColumnDefs = (): ColDef<TreeRowData>[] => {
-  const baseColumns: ColDef<TreeRowData>[] = [
-    {
-      field: 'rowNumber',
-      headerName: '№ п/п',
-      width: 80,
-      sortable: false,
-      filter: false,
-      pinned: 'left',
-      cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '500', borderRight: 'none' },
-      valueGetter: (params: ValueGetterParams<TreeRowData>) => {
-        if (!params.data || !params.api || !params.node) {
-          return '';
-        }
-
-        const displayedRowCount = params.api.getDisplayedRowCount();
-        for (let i = 0; i < displayedRowCount; i++) {
-          const displayedRow = params.api.getDisplayedRowAtIndex(i);
-          if (displayedRow?.data && displayedRow.data.id === params.data.id) {
-            return i + 1;
-          }
-        }
-
-        return '';
-      }
-    }
-  ];
-
-  let dataColumns: ColDef<TreeRowData>[] = [];
-  if (props.columns && props.columns.length > 0) {
-    dataColumns = props.columns.map((col) => ({
-      field: col.field,
-      headerName: col.headerName,
-      minWidth: col.width || 200,
-      sortable: false,
-      filter: false,
-      resizable: false,
-      cellRenderer: col.cellRenderer
-    })) as ColDef<TreeRowData>[];
-  } else {
-    dataColumns = [
-      {
-        field: 'description',
-        headerName: 'Наименование',
-        minWidth: 350,
-        flex: 1,
-        sortable: false,
-        filter: false,
-      resizable: false,
-
-        autoHeight: true,
-        cellStyle: (params) => {
-          const baseStyle = {
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            fontWeight: '500',
-          };
-
-          // Условие: строка не имеет потомков
-          if (params.data && !params.data.hasChildren) {
-            return { ...baseStyle, fontWeight: 'normal', color: 'gray' };
-          }
-
-          return baseStyle; 
-        },
-        cellRenderer: (params: ICellRendererParams<TreeRowData>) => {
-          return params.data?.description || '';
-        }
-      }
-    ] as ColDef<TreeRowData>[];
-  }
-
-  return [...baseColumns, ...dataColumns];
-};
-
-const autoGroupColumnDef = computed<ColDef<TreeRowData>>(() => ({
-  headerName: 'Категория',
-  field: 'name',
-  minWidth: 300,
-  cellRendererParams: {
-    suppressCount: true,
-    innerRenderer: (params: ICellRendererParams<TreeRowData>) => {
-      return params.data?.name || '';
-    }
-  },
-  cellStyle: (params) => {
-    const baseStyle = {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'flex-start',
-    };
-    
-    if (params.data && !params.data.hasChildren) {
-      return {
-        ...baseStyle,
-        color: 'gray',
-        fontStyle: 'normal',
-      };
-    }
-    
-    return {
-      ...baseStyle,
-      fontWeight: '500',
-    };
-  },
-  sortable: false,
-  
-  filter: false
-}));
 
 const refreshRowNumbers = () => {
   if (gridApi.value) {
@@ -174,8 +62,6 @@ function onRowGroupOpened() {
 function onModelUpdated() {
   refreshRowNumbers();
 }
-
-
 
 const addEventListeners = (api: GridApi) => {
   api.addEventListener('rowGroupOpened', onRowGroupOpened);
@@ -217,7 +103,7 @@ interface MyGridOptions {
 }
 
 const gridOptions = computed<MyGridOptions>(() => ({
-  columnDefs: getColumnDefs(),
+  columnDefs: columnDefs.value,
   rowData: rowData.value,
   treeData: true,
   animateRows: true,
@@ -236,8 +122,8 @@ onUnmounted(() => {
     removeEventListeners(gridApi.value);
   }
 });
-
 </script>
+
 <style scoped>
 .tree-table-container {
   width: 100%;
@@ -263,24 +149,4 @@ onUnmounted(() => {
   font-size: 16px;
   color: #666;
 }
-
-/* Добавляем границу только между колонками, но не по краям */
-.tree-table :deep(.ag-header-cell) {
-  border-right: 1px solid var(--ag-border-color, #000);
-}
-.tree-table :deep(.ag-header-cell-resize) {
-  display: none;
-}
-
-/* Убираем правую границу для последней колонки */
-.tree-table :deep(.ag-header-cell:last-child) {
-  border-right: none !important;
-}
-
-/* Убираем левую границу для первой колонки */
-.tree-table :deep(.ag-header-cell:first-child) {
-  border-left: none !important;
-}
-
-
 </style>
