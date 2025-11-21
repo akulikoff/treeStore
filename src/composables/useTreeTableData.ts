@@ -27,10 +27,10 @@ export function useTreeTableData(props: TreeTableProps) {
   const getDataPath = (data: TreeRowData): string[] => {
     const parents = props.treeStore.getAllParents(data.id);
     // Разворачиваем для получения правильной иерархии (корень -> дочерний)
-    const path = parents.reverse().map(parent => {
+    const path = parents.map(parent => {
       const name = (parent as TreeItem).name;
       return (name ? String(name) : parent.id.toString());
-    });
+    }).reverse();
     return path;
   };
 

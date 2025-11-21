@@ -38,7 +38,11 @@ const { rowData, getDataPath } = useTreeTableData(props);
 
 const myTheme = themeQuartz
     .withPart(iconSetQuartz)
-    .withPart(colorSchemeLight);
+    .withPart(colorSchemeLight)
+    .withParams({
+        headerColumnBorder: '1px solid var(--ag-border-color, #000)', // Добавляем границу между колонками в заголовке
+        // ... другие параметры темы, если нужно
+    });
 // Пропсы компонента
 
 // Ссылка на API таблицы
