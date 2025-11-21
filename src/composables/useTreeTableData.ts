@@ -1,10 +1,10 @@
 import { computed } from 'vue';
-import type { TreeTableProps, TreeRowData, TreeItem } from '../types/tree.type';
+import type { TreeTableProps, TreeRowData } from '../types/tree.type';
 
 export function useTreeTableData(props: TreeTableProps) {
   const calculateLevel = (itemId: string | number): number => {
     const parents = props.treeStore.getAllParents(itemId);
-    return parents.length - 1; // Вычитаем 1, так как getAllParents включает сам элемент
+    return parents.length; // Уровень равен количеству родителей
   };
 
   const rowData = computed(() => {
@@ -26,11 +26,11 @@ export function useTreeTableData(props: TreeTableProps) {
 
   const getDataPath = (data: TreeRowData): string[] => {
     const parents = props.treeStore.getAllParents(data.id);
-    // Разворачиваем для получения правильной иерархии (корень -> дочерний)
-    const path = parents.map(parent => {
-      const name = (parent as TreeItem).name;
-      return (name ? String(name) : parent.id.toString());
-    }).reverse();
+    // Строим путь от корня до текущего элемента используя уникальные ID
+    // getAllParents возвращает только родителей (без самого элемента)
+    // Разворачиваем для получения порядка корень-родитель, затем добавляем текущий элемент
+    const path = parents.map(parent => parent.id.toString()).reverse();
+    path.push(data.id.toString());
     return path;
   };
 

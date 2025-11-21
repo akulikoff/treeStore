@@ -1,77 +1,77 @@
 /**
- * Core TreeItem interface representing a node in the tree structure
+ * Базовый интерфейс TreeItem, представляющий узел в древовидной структуре
  */
 export interface TreeItem {
-  /** Unique identifier for the tree item */
+  /** Уникальный идентификатор элемента дерева */
   id: string | number;
-  /** Reference to parent item's id, null/undefined for root items */
+  /** Ссылка на id родительского элемента, null/undefined для корневых элементов */
   parent?: string | number | null;
-  /** Additional arbitrary fields */
+  /** Дополнительные произвольные поля */
   [key: string]: unknown;
 }
 
 /**
- * Interface for the TreeStore class that manages hierarchical data
+ * Интерфейс для класса TreeStore, управляющего иерархическими данными
  */
 export interface TreeStoreInterface {
-  /** Returns the original array of all items */
+  /** Возвращает исходный массив всех элементов */
   getAll(): TreeItem[];
-  /** Returns a specific item by id or undefined if not found */
+  /** Возвращает конкретный элемент по id или undefined, если не найден */
   getItem(id: string | number): TreeItem | undefined;
-  /** Returns direct children of the specified item */
+  /** Возвращает прямых потомков указанного элемента */
   getChildren(id: string | number): TreeItem[];
-  /** Returns all descendants of the specified item at all levels */
+  /** Возвращает всех потомков указанного элемента на всех уровнях */
   getAllChildren(id: string | number): TreeItem[];
-  /** Returns the chain of parent items from the specified item to root */
+  /** Возвращает цепочку родительских элементов от указанного элемента до корня */
   getAllParents(id: string | number): TreeItem[];
-  /** Adds a new item to the tree structure */
+  /** Добавляет новый элемент в древовидную структуру */
   addItem(item: TreeItem): void;
-  /** Removes an item and all its descendants from the tree */
+  /** Удаляет элемент и всех его потомков из дерева */
   removeItem(id: string | number): void;
-  /** Updates an existing item in the tree */
+  /** Обновляет существующий элемент в дереве */
   updateItem(item: TreeItem): void;
 }
 
 /**
- * Props interface for the TreeTable Vue component
+ * Интерфейс пропсов для Vue-компонента TreeTable
  */
 export interface TreeTableProps {
-  /** TreeStore instance containing the hierarchical data */
+  /** Экземпляр TreeStore, содержащий иерархические данные */
   treeStore: TreeStoreInterface;
-  /** Optional column definitions for the table */
+  /** Опциональные определения колонок для таблицы */
   columns?: ColumnConfig[];
 }
 
 /**
- * Extended TreeItem interface for table row data with additional display properties
+ * Расширенный интерфейс TreeItem для данных строк таблицы с дополнительными свойствами отображения
  */
 export interface TreeRowData extends TreeItem {
-  /** Sequential row number in the table (computed dynamically) */
+  /** Порядковый номер строки в таблице (вычисляется динамически) */
   rowNumber?: number;
-  /** Category of the item: "Группа" for items with children, "Элемент" for leaf nodes */
+  /** Категория элемента: "Группа" для элементов с детьми, "Элемент" для листовых узлов */
   category: "Группа" | "Элемент";
-  /** Nesting level in the hierarchy */
+  /** Уровень вложенности в иерархии */
   level: number;
-  /** Whether this item has children */
+  /** Имеет ли этот элемент детей */
   hasChildren: boolean;
-  /** Current expansion state (optional) */
+  /** Текущее состояние раскрытия (опционально) */
   expanded?: boolean;
 }
 
 /**
- * Column configuration interface for AG Grid
+ * Интерфейс конфигурации колонки для AG Grid
  */
 export interface ColumnConfig {
-  /** Field name to display */
+  /** Имя поля для отображения */
   field: string;
-  /** Header text for the column */
+  /** Текст заголовка колонки */
   headerName: string;
-  /** Optional column width */
+  /** Опциональная ширина колонки */
   width?: number;
-  /** Optional custom cell renderer */
+  /** Опциональный пользовательский рендерер ячейки */
   cellRenderer?: string;
-  /** Whether the column is sortable */
+  /** Можно ли сортировать колонку */
   sortable?: boolean;
-  /** Whether the column has filtering enabled */
+  /** Включена ли фильтрация для колонки */
   filter?: boolean;
 }

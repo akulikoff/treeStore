@@ -22,10 +22,10 @@ import TreeTable from './components/TreeTable.vue';
 import { TreeStore } from './services/TreeStore.ts';
 import { sampleTreeData } from './server/mockData';
 
-// Create TreeStore instance for testing
+// Создаем экземпляр TreeStore для тестирования
 const treeStore = new TreeStore(sampleTreeData);
 
-// Reference to TreeTable component
+// Ссылка на компонент TreeTable
 const treeTableRef = ref<InstanceType<typeof TreeTable> | null>(null);
 </script>
 

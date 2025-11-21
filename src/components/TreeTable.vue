@@ -20,12 +20,13 @@ import { ref, computed, onUnmounted } from 'vue';
 import { AgGridVue } from 'ag-grid-vue3';
 import { ModuleRegistry, AllCommunityModule, themeQuartz, colorSchemeLight, iconSetQuartz   } from 'ag-grid-community';
 import { RowGroupingModule, TreeDataModule, RowNumbersModule } from 'ag-grid-enterprise';
-import type { ColDef, GridReadyEvent, GridApi, ICellRendererParams,  ValueGetterParams, Theme } from 'ag-grid-community'; // Заменяем RowDataChangedEvent на DataChangedEvent
+import type { ColDef, GridReadyEvent, GridApi, ICellRendererParams,  ValueGetterParams, Theme } from 'ag-grid-community';
 import type { TreeTableProps, TreeRowData } from '../types/tree.type';
 
 
 import { useTreeTableData } from '../composables/useTreeTableData';
-// Регистрация модулей Ag Grid
+
+// Регистрация модулей AG Grid
 ModuleRegistry.registerModules([
   AllCommunityModule,
   RowGroupingModule,
@@ -36,14 +37,14 @@ ModuleRegistry.registerModules([
 const props = defineProps<TreeTableProps>();
 const { rowData, getDataPath } = useTreeTableData(props);
 
+// Настройка темы AG Grid
 const myTheme = themeQuartz
     .withPart(iconSetQuartz)
     .withPart(colorSchemeLight)
     .withParams({
-        headerColumnBorder: '1px solid var(--ag-border-color, #000)', // Добавляем границу между колонками в заголовке
-        // ... другие параметры темы, если нужно
+        headerColumnBorder: 'none',
+        columnBorder: 'none',
     });
-// Пропсы компонента
 
 // Ссылка на API таблицы
 const gridApi = ref<GridApi | null>(null);
@@ -58,7 +59,7 @@ const getColumnDefs = (): ColDef<TreeRowData>[] => {
       sortable: false,
       filter: false,
       pinned: 'left',
-      cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '500' },
+      cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '500', borderRight: 'none' },
       valueGetter: (params: ValueGetterParams<TreeRowData>) => {
         if (!params.data || !params.api || !params.node) {
           return '';
@@ -79,12 +80,13 @@ const getColumnDefs = (): ColDef<TreeRowData>[] => {
 
   let dataColumns: ColDef<TreeRowData>[] = [];
   if (props.columns && props.columns.length > 0) {
-    dataColumns = props.columns.map(col => ({
+    dataColumns = props.columns.map((col) => ({
       field: col.field,
       headerName: col.headerName,
-      width: col.width || 200,
+      minWidth: col.width || 200,
       sortable: false,
       filter: false,
+      resizable: false,
       cellRenderer: col.cellRenderer
     })) as ColDef<TreeRowData>[];
   } else {
@@ -92,11 +94,14 @@ const getColumnDefs = (): ColDef<TreeRowData>[] => {
       {
         field: 'description',
         headerName: 'Наименование',
-        width: 250,
+        minWidth: 350,
+        flex: 1,
         sortable: false,
         filter: false,
+      resizable: false,
+
         autoHeight: true,
-            cellStyle: (params) => {
+        cellStyle: (params) => {
           const baseStyle = {
             display: 'flex',
             alignItems: 'center',
@@ -106,10 +111,10 @@ const getColumnDefs = (): ColDef<TreeRowData>[] => {
 
           // Условие: строка не имеет потомков
           if (params.data && !params.data.hasChildren) {
-            return { ...baseStyle, fontWeight: 'normal', color: 'gray' }; // <-- Жирный шрифт
+            return { ...baseStyle, fontWeight: 'normal', color: 'gray' };
           }
 
-          return baseStyle; // <-- Обычный шрифт
+          return baseStyle; 
         },
         cellRenderer: (params: ICellRendererParams<TreeRowData>) => {
           return params.data?.description || '';
@@ -152,6 +157,7 @@ const autoGroupColumnDef = computed<ColDef<TreeRowData>>(() => ({
     };
   },
   sortable: false,
+  
   filter: false
 }));
 
@@ -186,9 +192,13 @@ const removeEventListeners = (api: GridApi) => {
 function onGridReady(params: GridReadyEvent<TreeRowData>) {
   gridApi.value = params.api;
   addEventListeners(params.api);
+  
   setTimeout(() => {
-    params.api.expandAll();
-  }, 100);
+    if (params.api) {
+      params.api.expandAll();
+      params.api.refreshCells();
+    }
+  }, 300);
 }
 
 interface MyGridOptions {
@@ -211,7 +221,7 @@ const gridOptions = computed<MyGridOptions>(() => ({
   rowData: rowData.value,
   treeData: true,
   animateRows: true,
-  groupDefaultExpanded: 1,
+  groupDefaultExpanded: -1, 
   getDataPath: getDataPath,
   autoGroupColumnDef: autoGroupColumnDef.value,
   theme: myTheme,
@@ -253,5 +263,24 @@ onUnmounted(() => {
   font-size: 16px;
   color: #666;
 }
+
+/* Добавляем границу только между колонками, но не по краям */
+.tree-table :deep(.ag-header-cell) {
+  border-right: 1px solid var(--ag-border-color, #000);
+}
+.tree-table :deep(.ag-header-cell-resize) {
+  display: none;
+}
+
+/* Убираем правую границу для последней колонки */
+.tree-table :deep(.ag-header-cell:last-child) {
+  border-right: none !important;
+}
+
+/* Убираем левую границу для первой колонки */
+.tree-table :deep(.ag-header-cell:first-child) {
+  border-left: none !important;
+}
+
 
 </style>

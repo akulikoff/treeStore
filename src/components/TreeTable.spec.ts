@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import TreeTable from './TreeTable.vue'
 import type { TreeStoreInterface } from '../types/tree.type'
 
-// Mock AG Grid components
+// Мокируем компоненты AG Grid
 vi.mock('ag-grid-vue3', () => ({
   AgGridVue: {
     name: 'AgGridVue',
@@ -45,11 +45,9 @@ describe('TreeTable', () => {
         return []
       }),
       getAllParents: vi.fn().mockImplementation((id) => {
-        if (id === 1) return [{ id: 1, name: 'Root', description: 'Root Item', parent: null }]
-        if (id === 2) return [
-          { id: 2, name: 'Child', description: 'Child Item', parent: 1 },
-          { id: 1, name: 'Root', description: 'Root Item', parent: null },
-        ]
+        // getAllParents возвращает только родителей (без самого элемента)
+        if (id === 1) return [] // У корня нет родителей
+        if (id === 2) return [{ id: 1, name: 'Root', description: 'Root Item', parent: null }]
         return []
       }),
       getItem: vi.fn(),
@@ -102,6 +100,7 @@ describe('TreeTable', () => {
       },
     })
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const vm = wrapper.vm as any
     const rowData = vm.rowData
 

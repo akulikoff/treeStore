@@ -1,7 +1,7 @@
 import type { TreeItem } from '../types/tree.type';
 
 /**
- * Sample test data for TreeStore testing
+ * Примеры тестовых данных для тестирования TreeStore
  */
 export const sampleTreeData: TreeItem[] = [
   { id: 1, parent: null, name: "Проекты", type: "folder", description: "Корневая папка проектов" },
@@ -24,12 +24,12 @@ export const sampleTreeData: TreeItem[] = [
 ];
 
 /**
- * Generates test data with specified number of items
+ * Генерирует тестовые данные с указанным количеством элементов
  */
 export function generateTestData(count: number): TreeItem[] {
   const items: TreeItem[] = [];
   
-  // Create root items (10% of total)
+  // Создаем корневые элементы (10% от общего количества)
   const rootCount = Math.max(1, Math.floor(count * 0.1));
   for (let i = 0; i < rootCount; i++) {
     items.push({
@@ -40,7 +40,7 @@ export function generateTestData(count: number): TreeItem[] {
     });
   }
   
-  // Create child items
+  // Создаем дочерние элементы
   for (let i = rootCount; i < count; i++) {
     const parentId = Math.floor(Math.random() * i);
     items.push({

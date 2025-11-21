@@ -16,6 +16,7 @@ export default defineConfig({
     },
   },
   build: {
+    chunkSizeWarningLimit: 1500, // AG Grid Enterprise is large, increase limit
     rollupOptions: {
       output: {
         manualChunks: {

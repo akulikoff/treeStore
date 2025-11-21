@@ -1,25 +1,25 @@
 import type { TreeItem, TreeStoreInterface } from '../types/tree.type';
 
 /**
- * High-performance TreeStore class for managing hierarchical data structures
- * Implements O(1) operations through pre-computed indexes and caching strategies
+ * Высокопроизводительный класс TreeStore для управления иерархическими структурами данных
+ * Реализует операции O(1) через предвычисленные индексы и стратегии кэширования
  */
 export class TreeStore implements TreeStoreInterface {
-  // Original array reference for O(1) getAll() operation
+  // Ссылка на исходный массив для операции getAll() с O(1)
   private items: TreeItem[];
   
-  // Pre-computed indexes for O(1) access patterns
+  // Предвычисленные индексы для паттернов доступа O(1)
   private itemsMap: Map<string | number, TreeItem>;
   private childrenMap: Map<string | number, TreeItem[]>;
   private parentMap: Map<string | number, TreeItem>;
   
-  // Caching for expensive operations
+  // Кэширование для дорогостоящих операций
   private allChildrenCache: Map<string | number, TreeItem[]>;
   private parentChainCache: Map<string | number, TreeItem[]>;
 
   /**
-   * Constructor that builds internal indexes with single array traversal
-   * @param items Array of TreeItem objects to initialize the store
+   * Конструктор, который строит внутренние индексы за один проход по массиву
+   * @param items Массив объектов TreeItem для инициализации хранилища
    */
   constructor(items: TreeItem[] = []) {
     this.items = items;
@@ -33,36 +33,36 @@ export class TreeStore implements TreeStoreInterface {
   }
 
   /**
-   * Builds all internal indexes with a single traversal of the items array
-   * This ensures O(1) performance for subsequent operations
+   * Строит все внутренние индексы за один проход по массиву элементов
+   * Это обеспечивает производительность O(1) для последующих операций
    */
   private buildIndexes(): void {
-    // Clear existing indexes
+    // Очищаем существующие индексы
     this.itemsMap.clear();
     this.childrenMap.clear();
     this.parentMap.clear();
     this.allChildrenCache.clear();
     this.parentChainCache.clear();
 
-    // Single pass to build itemsMap and initialize childrenMap
+    // Первый проход для построения itemsMap и инициализации childrenMap
     for (const item of this.items) {
       this.itemsMap.set(item.id, item);
       
-      // Initialize empty children arrays for all items
+      // Инициализируем пустые массивы детей для всех элементов
       if (!this.childrenMap.has(item.id)) {
         this.childrenMap.set(item.id, []);
       }
     }
 
-    // Second pass to build parent-child relationships
+    // Второй проход для построения связей родитель-потомок
     for (const item of this.items) {
       if (item.parent != null) {
-        // Set parent mapping
+        // Устанавливаем маппинг родителя
         const parent = this.itemsMap.get(item.parent);
         if (parent) {
           this.parentMap.set(item.id, parent);
           
-          // Add to parent's children list
+          // Добавляем в список детей родителя
           const siblings = this.childrenMap.get(item.parent);
           if (siblings) {
             siblings.push(item);
@@ -75,31 +75,31 @@ export class TreeStore implements TreeStoreInterface {
   }
 
   /**
-   * Returns the original array of all items - O(1) operation
+   * Возвращает исходный массив всех элементов - операция O(1)
    */
   getAll(): TreeItem[] {
     return this.items;
   }
 
   /**
-   * Returns a specific item by id - O(1) operation using Map lookup
+   * Возвращает конкретный элемент по id - операция O(1) через поиск в Map
    */
   getItem(id: string | number): TreeItem | undefined {
     return this.itemsMap.get(id);
   }
 
   /**
-   * Returns direct children of the specified item - O(1) operation using pre-computed index
+   * Возвращает прямых потомков указанного элемента - операция O(1) через предвычисленный индекс
    */
   getChildren(id: string | number): TreeItem[] {
     return this.childrenMap.get(id) || [];
   }
 
   /**
-   * Returns all descendants of the specified item at all levels - O(1) with caching
+   * Возвращает всех потомков указанного элемента на всех уровнях - O(1) с кэшированием
    */
   getAllChildren(id: string | number): TreeItem[] {
-    // Check cache first
+    // Сначала проверяем кэш
     if (this.allChildrenCache.has(id)) {
       return this.allChildrenCache.get(id)!;
     }
@@ -109,20 +109,20 @@ export class TreeStore implements TreeStoreInterface {
 
     for (const child of directChildren) {
       result.push(child);
-      // Recursively get all descendants
+      // Рекурсивно получаем всех потомков
       result.push(...this.getAllChildren(child.id));
     }
 
-    // Cache the result for future O(1) access
+    // Кэшируем результат для будущего доступа O(1)
     this.allChildrenCache.set(id, result);
     return result;
   }
 
   /**
-   * Returns the chain of parent items from the specified item to root - O(1) with caching
+   * Возвращает цепочку родительских элементов от указанного элемента до корня - O(1) с кэшированием
    */
   getAllParents(id: string | number): TreeItem[] {
-    // Check cache first
+    // Сначала проверяем кэш
     if (this.parentChainCache.has(id)) {
       return this.parentChainCache.get(id)!;
     }
@@ -133,11 +133,8 @@ export class TreeStore implements TreeStoreInterface {
     if (!item) {
       return result;
     }
-
-    // Start with the item itself
-    result.push(item);
     
-    // Walk up the parent chain
+    // Поднимаемся по цепочке родителей
     let currentItem = item;
     while (currentItem.parent != null) {
       const parent = this.parentMap.get(currentItem.id);
@@ -149,36 +146,36 @@ export class TreeStore implements TreeStoreInterface {
       }
     }
 
-    // Cache the result for future O(1) access
+    // Кэшируем результат для будущего доступа O(1)
     this.parentChainCache.set(id, result);
     return result;
   }
 
   /**
-   * Adds a new item to the tree structure
-   * Updates internal indexes efficiently
+   * Добавляет новый элемент в древовидную структуру
+   * Эффективно обновляет внутренние индексы
    */
   addItem(item: TreeItem): void {
-    // Prevent duplicate IDs
+    // Предотвращаем дублирование ID
     if (this.itemsMap.has(item.id)) {
       console.warn(`Item with id ${item.id} already exists`);
       return;
     }
 
-    // Add to items array and itemsMap
+    // Добавляем в массив элементов и itemsMap
     this.items.push(item);
     this.itemsMap.set(item.id, item);
     
-    // Initialize children array for new item
+    // Инициализируем массив детей для нового элемента
     this.childrenMap.set(item.id, []);
 
-    // Update parent-child relationships
+    // Обновляем связи родитель-потомок
     if (item.parent != null) {
       const parent = this.itemsMap.get(item.parent);
       if (parent) {
         this.parentMap.set(item.id, parent);
         
-        // Add to parent's children
+        // Добавляем в список детей родителя
         const siblings = this.childrenMap.get(item.parent);
         if (siblings) {
           siblings.push(item);
@@ -188,12 +185,12 @@ export class TreeStore implements TreeStoreInterface {
       }
     }
 
-    // Invalidate affected caches
+    // Инвалидируем затронутые кэши
     this.invalidateCache(new Set([item.id, item.parent].filter(id => id != null) as (string | number)[]));
   }
 
   /**
-   * Removes an item and all its descendants from the tree
+   * Удаляет элемент и всех его потомков из дерева
    */
   removeItem(id: string | number): void {
     const item = this.getItem(id);
@@ -201,21 +198,21 @@ export class TreeStore implements TreeStoreInterface {
       return;
     }
 
-    // Get all descendants to remove
+    // Получаем всех потомков для удаления
     const allDescendants = this.getAllChildren(id);
     const idsToRemove = new Set([id, ...allDescendants.map(d => d.id)]);
 
-    // Remove from items array
+    // Удаляем из массива элементов
     this.items = this.items.filter(item => !idsToRemove.has(item.id));
 
-    // Remove from all maps
+    // Удаляем из всех карт
     for (const idToRemove of idsToRemove) {
       this.itemsMap.delete(idToRemove);
       this.childrenMap.delete(idToRemove);
       this.parentMap.delete(idToRemove);
     }
 
-    // Remove from parent's children list
+    // Удаляем из списка детей родителя
     if (item.parent != null) {
       const siblings = this.childrenMap.get(item.parent);
       if (siblings) {
@@ -226,12 +223,12 @@ export class TreeStore implements TreeStoreInterface {
       }
     }
 
-    // Invalidate affected caches
+    // Инвалидируем затронутые кэши
     this.invalidateCache(new Set([item.parent, ...Array.from(idsToRemove)].filter(id => id != null) as (string | number)[]));
   }
 
   /**
-   * Updates an existing item in the tree
+   * Обновляет существующий элемент в дереве
    */
   updateItem(item: TreeItem): void {
     const existingItem = this.getItem(item.id);
@@ -243,18 +240,18 @@ export class TreeStore implements TreeStoreInterface {
     const oldParent = existingItem.parent;
     const newParent = item.parent;
 
-    // Update the item in the items array
+    // Обновляем элемент в массиве элементов
     const index = this.items.findIndex(i => i.id === item.id);
     if (index !== -1) {
       this.items[index] = item;
     }
 
-    // Update itemsMap
+    // Обновляем itemsMap
     this.itemsMap.set(item.id, item);
 
-    // Handle parent relationship changes
+    // Обрабатываем изменения родительских связей
     if (oldParent !== newParent) {
-      // Remove from old parent's children
+      // Удаляем из детей старого родителя
       if (oldParent != null) {
         const oldSiblings = this.childrenMap.get(oldParent);
         if (oldSiblings) {
@@ -266,7 +263,7 @@ export class TreeStore implements TreeStoreInterface {
         this.parentMap.delete(item.id);
       }
 
-      // Add to new parent's children
+      // Добавляем в детей нового родителя
       if (newParent != null) {
         const parent = this.itemsMap.get(newParent);
         if (parent) {
@@ -282,25 +279,25 @@ export class TreeStore implements TreeStoreInterface {
       }
     }
 
-    // Invalidate affected caches
+    // Инвалидируем затронутые кэши
     this.invalidateCache(new Set([item.id, oldParent, newParent].filter(id => id != null) as (string | number)[]));
   }
 
   /**
-   * Invalidates cache entries for affected nodes and their ancestors
+   * Инвалидирует записи кэша для затронутых узлов и их предков
    */
   private invalidateCache(affectedIds: Set<string | number>): void {
     for (const id of affectedIds) {
       this.allChildrenCache.delete(id);
       this.parentChainCache.delete(id);
       
-      // Invalidate parent caches up the chain
+      // Инвалидируем кэши родителей вверх по цепочке
       this.invalidateParentCaches(id);
     }
   }
 
   /**
-   * Recursively invalidates caches for all parent nodes
+   * Рекурсивно инвалидирует кэши для всех родительских узлов
    */
   private invalidateParentCaches(id: string | number): void {
     const parent = this.parentMap.get(id);
